@@ -1,0 +1,145 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Urna de Treino - Eleições 2026</title>
+<style>
+*{box-sizing:border-box;margin:0;padding:0}
+body{font-family:Arial,Helvetica,sans-serif;background:#d9d9d4;min-height:100vh;display:flex;flex-direction:column;align-items:center;justify-content:center;padding:12px;gap:10px}
+.urna{display:flex;gap:14px;background:#c8c8c2;border:3px solid #999;border-radius:12px;padding:14px;width:100%;max-width:900px}
+.tela{flex:1.6;background:#f4f4f0;border:4px solid #555;border-radius:6px;padding:16px;min-height:380px;display:flex;flex-direction:column;position:relative}
+.topo{font-size:clamp(14px,2.4vw,20px);color:#333;letter-spacing:1px}
+.cargo{font-size:clamp(26px,5vw,44px);font-weight:bold;margin:8px 0 14px}
+.sub{font-size:clamp(16px,3vw,24px);margin-bottom:6px}
+.nums{display:flex;gap:8px;margin:8px 0}
+.box{width:clamp(38px,7vw,60px);height:clamp(50px,9vw,76px);border:3px solid #222;font-size:clamp(30px,6vw,52px);font-weight:bold;display:flex;align-items:center;justify-content:center;background:#fff}
+.box.atual{border-color:#d00;animation:pisca 1s infinite}
+@keyframes pisca{50%{background:#ffe5e5}}
+.cand{display:flex;gap:14px;align-items:center;margin-top:8px}
+.foto{width:90px;height:115px;border:2px solid #555;background:#ddd;display:flex;align-items:flex-end;justify-content:center;font-size:12px;color:#555;overflow:hidden}
+.foto svg{width:80%}
+.cand p{font-size:clamp(16px,3vw,24px);margin:4px 0}
+.branco{font-size:clamp(28px,6vw,48px);font-weight:bold;text-align:center;margin:20px 0}
+.aviso{font-size:clamp(14px,2.5vw,18px);color:#b00;margin-top:8px;min-height:24px;font-weight:bold}
+.rodape{margin-top:auto;border-top:2px solid #555;padding-top:8px;font-size:clamp(13px,2.4vw,17px)}
+.fim{margin:auto;text-align:center}
+.fim h1{font-size:clamp(80px,22vw,180px);letter-spacing:10px}
+.fim p{font-size:20px;margin:12px 0}
+.fim button{font-size:20px;padding:12px 24px;cursor:pointer;border-radius:8px;border:2px solid #333;background:#fff}
+.teclado{flex:1;display:flex;flex-direction:column;gap:10px;justify-content:center}
+.teclas{display:grid;grid-template-columns:repeat(3,1fr);gap:8px}
+.t{background:#222;color:#fff;border:none;border-radius:6px;font-size:clamp(24px,4vw,34px);font-weight:bold;padding:14px 0;cursor:pointer;box-shadow:0 3px 0 #000}
+.t:active{transform:translateY(3px);box-shadow:none}
+.t.z{grid-column:2}
+.acoes{display:grid;grid-template-columns:repeat(3,1fr);gap:8px}
+.a{border:none;border-radius:6px;font-weight:bold;font-size:clamp(11px,2vw,15px);padding:16px 2px;cursor:pointer;box-shadow:0 3px 0 rgba(0,0,0,.5);color:#000}
+.a:active{transform:translateY(3px);box-shadow:none}
+.b{background:#fff}.c{background:#f08a24}.v{background:#2e9b3a;color:#fff}
+.nota{font-size:14px;color:#444;text-align:center;max-width:700px}
+@media(max-width:640px){.urna{flex-direction:column}.tela{min-height:340px}}
+</style>
+</head>
+<body>
+<div class="urna">
+  <div class="tela" id="tela"></div>
+  <div class="teclado">
+    <div class="teclas">
+      <button class="t" data-n="1">1</button><button class="t" data-n="2">2</button><button class="t" data-n="3">3</button>
+      <button class="t" data-n="4">4</button><button class="t" data-n="5">5</button><button class="t" data-n="6">6</button>
+      <button class="t" data-n="7">7</button><button class="t" data-n="8">8</button><button class="t" data-n="9">9</button>
+      <button class="t z" data-n="0">0</button>
+    </div>
+    <div class="acoes">
+      <button class="a b" id="bBranco">BRANCO</button>
+      <button class="a c" id="bCorrige">CORRIGE</button>
+      <button class="a v" id="bConfirma">CONFIRMA</button>
+    </div>
+  </div>
+</div>
+<p class="nota">Simulador de treino (não é a urna oficial). Qualquer número é aceito. Também funciona pelo teclado: números, Enter = confirma, Backspace = corrige, B = branco.</p>
+
+<script>
+const etapas=[
+ {cargo:'Deputado Federal',d:4},
+ {cargo:'Deputado Estadual',d:5},
+ {cargo:'Senador',d:3,sub:'1º voto'},
+ {cargo:'Senador',d:3,sub:'2º voto'},
+ {cargo:'Governador',d:2},
+ {cargo:'Presidente',d:2}
+];
+let i=0,num='',branco=false,aviso='';
+const tela=document.getElementById('tela');
+let ctx;
+function tom(f,ms){
+  try{
+    ctx=ctx||new (window.AudioContext||window.webkitAudioContext)();
+    const o=ctx.createOscillator(),g=ctx.createGain();
+    o.frequency.value=f;o.type='square';g.gain.value=.08;
+    o.connect(g);g.connect(ctx.destination);o.start();o.stop(ctx.currentTime+ms/1000);
+  }catch(e){}
+}
+function render(){
+  if(i>=etapas.length){
+    tela.innerHTML='<div class="fim"><h1>FIM</h1><p>Seu voto de treino foi registrado.<br>Parabéns, você completou a votação!</p><button onclick="reiniciar()">Treinar de novo</button></div>';
+    return;
+  }
+  const e=etapas[i];
+  let h='<div class="topo">SEU VOTO PARA</div><div class="cargo">'+e.cargo+'</div>';
+  if(e.sub)h+='<div class="sub">'+e.sub+'</div>';
+  if(branco){
+    h+='<div class="branco">VOTO EM BRANCO</div>';
+  }else{
+    h+='<div class="sub">NÚMERO:</div><div class="nums">';
+    for(let k=0;k<e.d;k++){
+      h+='<div class="box'+(k===num.length?' atual':'')+'">'+(num[k]||'')+'</div>';
+    }
+    h+='</div>';
+    if(num.length===e.d){
+      h+='<div class="cand"><div class="foto"><svg viewBox="0 0 100 120"><circle cx="50" cy="42" r="24" fill="#999"/><path d="M5 120c0-40 20-52 45-52s45 12 45 52z" fill="#999"/></svg></div><div><p><b>Nome:</b> Candidato de treino</p><p><b>Partido:</b> TREINO</p></div></div>';
+    }
+  }
+  h+='<div class="aviso">'+aviso+'</div>';
+  h+='<div class="rodape">Aperte a tecla:<br><b style="color:#2e9b3a">VERDE</b> para CONFIRMAR este voto<br><b style="color:#d96f00">LARANJA</b> para REINICIAR este voto</div>';
+  tela.innerHTML=h;
+}
+function digitar(n){
+  if(i>=etapas.length||branco)return;
+  if(num.length<etapas[i].d){num+=n;aviso='';tom(900,80);}
+  render();
+}
+function votoBranco(){
+  if(i>=etapas.length)return;
+  if(num.length>0){aviso='Aperte CORRIGE para apagar os números primeiro.';tom(300,150);}
+  else{branco=true;aviso='';tom(900,80);}
+  render();
+}
+function corrige(){
+  if(i>=etapas.length)return;
+  num='';branco=false;aviso='';tom(600,80);render();
+}
+function confirma(){
+  if(i>=etapas.length)return;
+  if(!branco&&num.length<etapas[i].d){
+    aviso='Digite todos os números (faltam '+(etapas[i].d-num.length)+') ou aperte BRANCO.';
+    tom(300,150);render();return;
+  }
+  i++;num='';branco=false;aviso='';
+  if(i>=etapas.length)tom(1000,1500);else tom(900,120);
+  render();
+}
+function reiniciar(){i=0;num='';branco=false;aviso='';render();}
+document.querySelectorAll('.t').forEach(b=>b.onclick=()=>digitar(b.dataset.n));
+document.getElementById('bBranco').onclick=votoBranco;
+document.getElementById('bCorrige').onclick=corrige;
+document.getElementById('bConfirma').onclick=confirma;
+document.addEventListener('keydown',ev=>{
+  if(/^[0-9]$/.test(ev.key))digitar(ev.key);
+  else if(ev.key==='Enter')confirma();
+  else if(ev.key==='Backspace'||ev.key==='Delete')corrige();
+  else if(ev.key.toLowerCase()==='b')votoBranco();
+});
+render();
+</script>
+</body>
+</html>
